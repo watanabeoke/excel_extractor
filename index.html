@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel Extractor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f5f5f4;
+      color: #1c1917;
+      font-size: 14px;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    header p {
+      color: #78716c;
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    /* UPLOAD */
+    #dropzone {
+      border: 1.5px dashed #d6d3d1;
+      border-radius: 10px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      background: white;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    #dropzone:hover,
+    #dropzone.drag-over {
+      border-color: #a8a29e;
+      background: #fafaf9;
+    }
+
+    #dropzone .icon {
+      font-size: 30px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    #dropzone h2 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    #dropzone p {
+      color: #78716c;
+      font-size: 0.78rem;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      margin-top: 14px;
+      background: #1c1917;
+      color: white;
+      padding: 7px 20px;
+      border-radius: 6px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .upload-btn:hover {
+      background: #44403c;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* PROGRESS */
+    #progressBox {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .prog-label {
+      font-size: 0.76rem;
+      color: #78716c;
+      margin-bottom: 5px;
+    }
+
+    .prog-wrap {
+      height: 3px;
+      background: #e7e5e4;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .prog-bar {
+      height: 100%;
+      background: #1c1917;
+      width: 0%;
+      border-radius: 99px;
+      transition: width 0.3s;
+    }
+
+    /* FILE INFO */
+    #fileInfo {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 8px;
+      padding: 11px 14px;
+      margin-top: 12px;
+    }
+
+    #fileInfo h3 {
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    #fileInfo p {
+      font-size: 0.73rem;
+      color: #78716c;
+      margin-top: 2px;
+    }
+
+    #fileInfo p strong {
+      color: #1c1917;
+    }
+
+    /* STATS */
+    #statsGrid {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 8px;
+      padding: 13px 16px;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: #a8a29e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 3px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    /* CONTROLS */
+    #controlsBar {
+      display: none;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 8px;
+      padding: 11px 14px;
+      margin-top: 12px;
+    }
+
+    input[type=text],
+    select {
+      border: 1px solid #e7e5e4;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 0.8rem;
+      outline: none;
+      background: #fafaf9;
+      color: #1c1917;
+    }
+
+    input[type=text]:focus,
+    select:focus {
+      border-color: #a8a29e;
+    }
+
+    input[type=text] {
+      min-width: 190px;
+    }
+
+    .sep {
+      width: 1px;
+      height: 20px;
+      background: #e7e5e4;
+    }
+
+    .btn {
+      padding: 5px 13px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #e7e5e4;
+      background: white;
+      color: #44403c;
+      font-family: 'Sarabun', sans-serif;
+      transition: all 0.15s;
+    }
+
+    .btn:hover {
+      border-color: #a8a29e;
+      background: #fafaf9;
+    }
+
+    .btn.active {
+      background: #1c1917;
+      color: white;
+      border-color: #1c1917;
+    }
+
+    .btn-fill {
+      background: #1c1917;
+      color: white;
+      border-color: #1c1917;
+    }
+
+    .btn-fill:hover {
+      background: #44403c;
+    }
+
+    .ml-auto {
+      margin-left: auto;
+      display: flex;
+      gap: 7px;
+    }
+
+    /* TABS */
+    #tabsSection {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .tabs-header {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs-header::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      background: #e7e5e4;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      color: #78716c;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      background: #d6d3d1;
+      color: #1c1917;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: #1c1917;
+      font-weight: 600;
+    }
+
+    /* DATA PANEL */
+    #dataPanel {
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 0 6px 6px 6px;
+      overflow: hidden;
+    }
+
+    .sheet-summary {
+      display: flex;
+      gap: 16px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #f5f5f4;
+      background: #fafaf9;
+      font-size: 0.73rem;
+      color: #78716c;
+    }
+
+    .sheet-summary strong {
+      color: #1c1917;
+    }
+
+    .filter-bar {
+      padding: 7px 14px;
+      background: #fefce8;
+      border-bottom: 1px solid #fef08a;
+      font-size: 0.76rem;
+      color: #78350f;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 500px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    thead th {
+      background: #fafaf9;
+      color: #78716c;
+      padding: 7px 11px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid #e7e5e4;
+      z-index: 10;
+    }
+
+    thead th:first-child {
+      color: #d6d3d1;
+      min-width: 44px;
+      text-align: center;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f5f5f4;
+    }
+
+    tbody tr:hover {
+      background: #fafaf9;
+    }
+
+    tbody td {
+      padding: 6px 11px;
+      white-space: nowrap;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tbody td:first-child {
+      color: #d6d3d1;
+      text-align: center;
+      font-size: 0.7rem;
+    }
+
+    .empty-cell {
+      color: #e7e5e4;
+    }
+
+    .hl {
+      background: #fef08a;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* JSON */
+    #jsonView {
+      display: none;
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 0 6px 6px 6px;
+    }
+
+    .json-header {
+      display: flex;
+      align-items: center;
+      padding: 9px 14px;
+      border-bottom: 1px solid #e7e5e4;
+      background: #fafaf9;
+      font-size: 0.76rem;
+      color: #78716c;
+      gap: 8px;
+    }
+
+    pre {
+      padding: 14px;
+      overflow: auto;
+      max-height: 460px;
+      font-size: 0.74rem;
+      line-height: 1.65;
+      color: #1c1917;
+      scrollbar-width: thin;
+    }
+
+    /* MARKDOWN */
+    #mdView {
+      display: none;
+      background: white;
+      border: 1px solid #e7e5e4;
+      border-radius: 0 6px 6px 6px;
+    }
+
+    .md-header {
+      display: flex;
+      align-items: center;
+      padding: 9px 14px;
+      border-bottom: 1px solid #e7e5e4;
+      background: #fafaf9;
+      font-size: 0.76rem;
+      color: #78716c;
+      gap: 8px;
+    }
+
+    #mdPre {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      border: none;
+      outline: none;
+      resize: vertical;
+      min-height: 300px;
+      max-height: 500px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.74rem;
+      line-height: 1.65;
+      color: #1c1917;
+      background: white;
+      scrollbar-width: thin;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: #a8a29e;
+      font-size: 0.84rem;
+    }
+
+    .empty-state span {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1c1917;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.2s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      #statsGrid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      input[type=text] {
+        min-width: 130px;
+      }
+
+      .ml-auto {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <h1>Excel Data Extractor</h1>
+      <p>อ่านข้อมูลจากไฟล์ Excel — แสดงเฉพาะ Sheet 1–6</p>
+    </header>
+
+    <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.csv" onchange="handleFile(this.files[0])">
+      <span class="icon">📂</span>
+      <h2>วางไฟล์ที่นี่ หรือคลิกเพื่อเลือก</h2>
+      <p>รองรับ .xlsx · .xls · .xlsm · .csv &nbsp;|&nbsp; แสดงเฉพาะ Sheet 1–6</p>
+      <button class="upload-btn"
+        onclick="event.stopPropagation(); document.getElementById('fileInput').click()">เลือกไฟล์</button>
+    </div>
+
+    <div id="progressBox">
+      <div class="prog-label" id="progressLabel">กำลังอ่านไฟล์...</div>
+      <div class="prog-wrap">
+        <div class="prog-bar" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div id="fileInfo">
+      <span style="font-size:20px">📑</span>
+      <div>
+        <h3 id="fileName">—</h3>
+        <p>ขนาด: <strong id="fileSize">—</strong> &nbsp;·&nbsp; Sheets ทั้งหมด: <strong id="sheetTotal">—</strong>
+          &nbsp;·&nbsp; แสดง: <strong id="sheetShown">—</strong></p>
+      </div>
+    </div>
+
+    <div id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-label">Sheets แสดง</div>
+        <div class="stat-value" id="s-sheets">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Rows</div>
+        <div class="stat-value" id="s-rows">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Non-empty Cells</div>
+        <div class="stat-value" id="s-cells">0</div>
+      </div>
+    </div>
+
+    <div id="controlsBar">
+      <input type="text" id="searchInput" placeholder="🔍  ค้นหาข้อมูล..." oninput="applyFilter()">
+      <select id="sheetSelector" onchange="switchSheet(this.value)"></select>
+      <div class="sep"></div>
+      <button class="btn active" id="btnTable" onclick="setView('table')">Table</button>
+      <button class="btn" id="btnJSON" onclick="setView('json')">JSON</button>
+      <button class="btn" id="btnMD" onclick="setView('markdown')">Markdown</button>
+      <div class="ml-auto">
+        <button class="btn btn-fill" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn btn-fill" onclick="exportAllJSON()">↓ All JSON</button>
+        <button class="btn" onclick="copyJSON()">Copy JSON</button>
+        <button class="btn" id="btnExportMD" onclick="exportMarkdown()" style="display:none">↓ MD</button>
+        <button class="btn" id="btnCopyMD" onclick="copyMarkdown()" style="display:none">Copy MD</button>
+      </div>
+    </div>
+
+    <div id="tabsSection">
+      <div class="tabs-header" id="tabsHeader"></div>
+      <div id="dataPanel">
+        <div class="empty-state"><span>📊</span>อัปโหลดไฟล์ Excel เพื่อดูข้อมูล</div>
+      </div>
+      <div id="jsonView">
+        <div class="json-header">
+          JSON — <span id="jsonSheetName"></span>
+          <button class="btn" style="margin-left:auto; padding:3px 10px; font-size:0.72rem;"
+            onclick="setView('table')">← Table</button>
+        </div>
+        <pre id="jsonPre"></pre>
+      </div>
+      <div id="mdView">
+        <div class="md-header">
+          📝 Markdown — <span id="mdSheetName"></span>
+          <button class="btn" style="margin-left:auto; padding:3px 10px; font-size:0.72rem;"
+            onclick="setView('table')">← Table</button>
+        </div>
+        <textarea id="mdPre" readonly></textarea>
+      </div>
+    </div>
+
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    let workbook = null, allSheetsData = {}, visibleSheets = [], currentSheet = null, currentView = 'table';
+    const MD_BTN_IDS = ['btnExportMD', 'btnCopyMD'];
+
+    const MAX_SHEETS = 6;
+
+    const dz = document.getElementById('dropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+    function handleFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      document.getElementById('progressBox').style.display = 'block';
+      setProgress(10, 'กำลังอ่านไฟล์...');
+      reader.onload = e => {
+        setProgress(45, 'กำลังแยก Sheets...');
+        try {
+          workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true, raw: false });
+          // Only first 6 sheets
+          visibleSheets = workbook.SheetNames.slice(0, MAX_SHEETS);
+          setProgress(75, `แสดง ${visibleSheets.length} Sheets แรก...`);
+          allSheetsData = {};
+          visibleSheets.forEach(n => {
+            allSheetsData[n] = XLSX.utils.sheet_to_json(workbook.Sheets[n], { header: 1, defval: '', raw: false, dateNF: 'DD/MM/YYYY' });
+          });
+          setProgress(100, 'เสร็จสมบูรณ์');
+          setTimeout(() => { document.getElementById('progressBox').style.display = 'none'; showResults(file); }, 300);
+        } catch (err) { setProgress(0, 'เกิดข้อผิดพลาด: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function setProgress(pct, label) {
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = label;
+    }
+
+    function showResults(file) {
+      let totalRows = 0, totalCells = 0;
+      visibleSheets.forEach(n => {
+        allSheetsData[n].forEach(r => {
+          totalRows++;
+          r.forEach(c => { if (c !== '') totalCells++; });
+        });
+      });
+
+      const fi = document.getElementById('fileInfo');
+      fi.style.display = 'flex';
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatBytes(file.size);
+      document.getElementById('sheetTotal').textContent = workbook.SheetNames.length + ' sheets';
+      document.getElementById('sheetShown').textContent = visibleSheets.length + ' sheets (1–6)';
+
+      document.getElementById('statsGrid').style.display = 'grid';
+      document.getElementById('s-sheets').textContent = visibleSheets.length;
+      document.getElementById('s-rows').textContent = totalRows.toLocaleString();
+      document.getElementById('s-cells').textContent = totalCells.toLocaleString();
+
+      document.getElementById('controlsBar').style.display = 'flex';
+      document.getElementById('tabsSection').style.display = 'block';
+
+      document.getElementById('sheetSelector').innerHTML = visibleSheets.map(n => `<option value="${n}">${n}</option>`).join('');
+      document.getElementById('tabsHeader').innerHTML = visibleSheets.map((n, i) =>
+        `<button class="tab-btn${i === 0 ? ' active' : ''}" onclick="switchSheet('${n.replace(/'/g, "\\'")}', this)">${n}</button>`
+      ).join('');
+
+      currentSheet = visibleSheets[0];
+      renderSheet(currentSheet);
+    }
+
+    function switchSheet(name, el) {
+      currentSheet = name;
+      document.getElementById('sheetSelector').value = name;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      document.getElementById('searchInput').value = '';
+      if (currentView === 'json') renderJSON(name);
+      else if (currentView === 'markdown') renderMarkdown(name);
+      else renderSheet(name);
+    }
+
+    function renderSheet(name, q) {
+      document.getElementById('dataPanel').style.display = 'block';
+      document.getElementById('jsonView').style.display = 'none';
+      document.getElementById('mdView').style.display = 'none';
+      const rows = allSheetsData[name];
+      if (!rows || !rows.length) {
+        document.getElementById('dataPanel').innerHTML = '<div class="empty-state"><span>🗒️</span>Sheet นี้ว่างเปล่า</div>';
+        return;
+      }
+      let maxC = 0;
+      rows.forEach(r => { if (r.length > maxC) maxC = r.length; });
+      const cols = Array.from({ length: maxC }, (_, i) => numToCol(i));
+      const lq = q ? q.toLowerCase() : null;
+      let matched = 0, tbody = '';
+      rows.forEach((row, ri) => {
+        if (lq && !row.join(' ').toLowerCase().includes(lq)) return;
+        matched++;
+        let tds = `<td>${ri + 1}</td>`;
+        for (let ci = 0; ci < maxC; ci++) {
+          const val = row[ci] !== undefined ? String(row[ci]) : '';
+          if (!val) { tds += `<td class="empty-cell">—</td>`; continue; }
+          const disp = lq
+            ? escHtml(val).replace(new RegExp(escReg(q), 'gi'), m => `<span class="hl">${m}</span>`)
+            : escHtml(val);
+          tds += `<td title="${escHtml(val)}">${disp}</td>`;
+        }
+        tbody += `<tr>${tds}</tr>`;
+      });
+      let html = '';
+      if (lq) html += `<div class="filter-bar">พบ <strong>${matched}</strong> แถวที่ตรงกับ "<strong>${escHtml(q)}</strong>" จาก ${rows.length} แถว</div>`;
+      html += `<div class="sheet-summary">
+    <span>Sheet: <strong>${name}</strong></span>
+    <span>Rows: <strong>${rows.length}</strong></span>
+    <span>Cols: <strong>${maxC}</strong></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>
+  </div>`;
+      document.getElementById('dataPanel').innerHTML = html;
+    }
+
+    function renderJSON(name) {
+      document.getElementById('dataPanel').style.display = 'none';
+      document.getElementById('jsonView').style.display = 'block';
+      document.getElementById('jsonSheetName').textContent = name;
+      const rows = allSheetsData[name];
+      if (!rows || !rows.length) { document.getElementById('jsonPre').textContent = '[]'; return; }
+      let hi = 0;
+      while (hi < rows.length && rows[hi].every(c => c === '')) hi++;
+      const headers = rows[hi] || [];
+      const out = [];
+      for (let i = hi + 1; i < rows.length; i++) {
+        const obj = {};
+        headers.forEach((h, ci) => { obj[h !== '' ? String(h) : `col_${ci}`] = rows[i][ci] ?? null; });
+        out.push(obj);
+      }
+      document.getElementById('jsonPre').textContent = JSON.stringify(out, null, 2);
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('searchInput').value.trim();
+      renderSheet(currentSheet, q || null);
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.getElementById('btnTable').className = 'btn' + (v === 'table' ? ' active' : '');
+      document.getElementById('btnJSON').className = 'btn' + (v === 'json' ? ' active' : '');
+      document.getElementById('btnMD').className = 'btn' + (v === 'markdown' ? ' active' : '');
+      MD_BTN_IDS.forEach(id => document.getElementById(id).style.display = v === 'markdown' ? '' : 'none');
+      if (v === 'json') renderJSON(currentSheet);
+      else if (v === 'markdown') renderMarkdown(currentSheet);
+      else renderSheet(currentSheet, document.getElementById('searchInput').value.trim() || null);
+    }
+
+    function renderMarkdown(name) {
+      document.getElementById('dataPanel').style.display = 'none';
+      document.getElementById('jsonView').style.display = 'none';
+      document.getElementById('mdView').style.display = 'block';
+      document.getElementById('mdSheetName').textContent = name;
+      const rows = allSheetsData[name];
+      if (!rows || !rows.length) { document.getElementById('mdPre').value = ''; return; }
+      let maxC = 0;
+      rows.forEach(r => { if (r.length > maxC) maxC = r.length; });
+      const escape = s => String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+      const lines = [];
+      rows.forEach((row, ri) => {
+        const cells = [];
+        for (let ci = 0; ci < maxC; ci++) cells.push(escape(row[ci] !== undefined ? row[ci] : ''));
+        lines.push('| ' + cells.join(' | ') + ' |');
+        if (ri === 0) lines.push('| ' + Array(maxC).fill('---').join(' | ') + ' |');
+      });
+      document.getElementById('mdPre').value = lines.join('\n');
+    }
+
+    function exportMarkdown() {
+      if (!currentSheet) return;
+      renderMarkdown(currentSheet);
+      dl(currentSheet + '.md', document.getElementById('mdPre').value, 'text/markdown;charset=utf-8');
+      toast('Export Markdown: ' + currentSheet + '.md');
+    }
+
+    function copyMarkdown() {
+      if (!currentSheet) return;
+      renderMarkdown(currentSheet);
+      navigator.clipboard.writeText(document.getElementById('mdPre').value).then(() => toast('Copy Markdown แล้ว'));
+    }
+
+    function exportCSV() {
+      if (!currentSheet) return;
+      dl(currentSheet + '.csv', '\uFEFF' + XLSX.utils.sheet_to_csv(workbook.Sheets[currentSheet]), 'text/csv');
+      toast('Export CSV: ' + currentSheet + '.csv');
+    }
+
+    function exportAllJSON() {
+      const out = {};
+      visibleSheets.forEach(n => { out[n] = allSheetsData[n]; });
+      dl('sheets_1to6.json', JSON.stringify(out, null, 2), 'application/json');
+      toast('Export JSON Sheet 1–6 แล้ว');
+    }
+
+    function copyJSON() {
+      renderJSON(currentSheet);
+      navigator.clipboard.writeText(document.getElementById('jsonPre').textContent).then(() => toast('Copy JSON แล้ว'));
+    }
+
+    function dl(name, content, mime) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+      a.download = name; a.click();
+    }
+
+    function numToCol(n) {
+      let s = ''; n++;
+      while (n > 0) { n--; s = String.fromCharCode(65 + n % 26) + s; n = Math.floor(n / 26); }
+      return s;
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + 'B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
+      return (b / 1048576).toFixed(2) + 'MB';
+    }
+
+    function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function escReg(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+
+</html>
